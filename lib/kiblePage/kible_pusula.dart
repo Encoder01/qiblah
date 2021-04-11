@@ -111,6 +111,7 @@ class QiblahCompassWidget extends StatefulWidget {
 class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
   MapboxGeocoding geocoding = MapboxGeocoding('pk.eyJ1IjoidGVhcnNmdXJ5IiwiYSI6ImNra2t3ZWtlajJiYWsycXF0cTV3NjdxOHoifQ.NDJ302t__eUEkJtq8vGh1A');
   String konum ="";
+  bool vibrat = false;
   @override
   void initState() {
     getCity();
@@ -159,15 +160,17 @@ class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
           double qb = ((qiblahDirection.direction * (pi / 180) * -1).abs()-(qiblahDirection.qiblah * (pi / 180) * -1)).abs();
           if(qb>=9.4&&qb<=9.5){
             Vibration.hasCustomVibrationsSupport().then((value) {
-              if(value) {
+              if(value&&!vibrat) {
                 Vibration.vibrate(duration: 500,amplitude: 10);
-              } else {
-                Vibration.vibrate();
-                Future.delayed(Duration(milliseconds: 500)).then((value) => Vibration.vibrate());
+                vibrat=true;
+              } else if(!value&&!vibrat) {
+                vibrat=true;
+                Vibration.vibrate(duration: 500,amplitude: 10);
               }
             });
           }else{
             Vibration.cancel();
+            vibrat=false;
           }
           return Stack(
             alignment: Alignment.center,
