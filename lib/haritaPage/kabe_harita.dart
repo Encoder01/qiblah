@@ -23,8 +23,8 @@ class _KabeHaritaState extends State<KabeHarita> {
   LatLng currentLocationLatlng;
   bool findKabe=false;
   var kabeMarkers = <LatLng>[
-    LatLng(0, 0),
-    LatLng(0, 0),
+    LatLng(21.422487, 39.826206),
+    LatLng( 21.422487, 39.826206),
   ];
   @override
   void initState() {
@@ -125,7 +125,7 @@ class _KabeHaritaState extends State<KabeHarita> {
                         onPressed: ()async{
                           await _checkLocationStatus();
                           currentLocation = await Geolocator.getCurrentPosition();
-                          currentLocationLatlng = LatLng(37.910000, 40.240002);
+                          currentLocationLatlng = LatLng(currentLocation.latitude, currentLocation.longitude);
                           mapController.move(LatLng(currentLocationLatlng.latitude, currentLocationLatlng.longitude), 18);
                           kabeMarkers.first=LatLng(currentLocationLatlng.latitude, currentLocationLatlng.longitude);
                           kabeMarkers.last=LatLng( 21.422487, 39.826206);

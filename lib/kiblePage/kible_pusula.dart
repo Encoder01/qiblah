@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_qiblah/flutter_qiblah.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:location_permissions/location_permissions.dart';
 import 'package:mapbox_geocoding/mapbox_geocoding.dart';
 import 'package:mapbox_geocoding/model/reverse_geocoding.dart';
 import 'package:qiblah/kiblePage/loading.dart';
+import 'package:vibration/vibration.dart';
 
 class KiblePusula extends StatefulWidget {
   @override
@@ -80,17 +82,19 @@ class _KiblePusulaState extends State<KiblePusula> {
       ),
     );
   }
-
   Future<void> _checkLocationStatus() async {
     final locationStatus = await FlutterQiblah.checkLocationStatus();
     if (locationStatus.enabled && locationStatus.status == LocationPermission.denied) {
       await FlutterQiblah.requestPermissions();
       final s = await FlutterQiblah.checkLocationStatus();
       _locationStreamController.sink.add(s);
+      setState(() {});
     } else
       _locationStreamController.sink.add(locationStatus);
-  }
+    setState(() {
 
+    });
+  }
   @override
   void dispose() {
     super.dispose();
@@ -100,8 +104,6 @@ class _KiblePusulaState extends State<KiblePusula> {
 }
 
 class QiblahCompassWidget extends StatefulWidget {
-
-// From coordinates
   @override
   _QiblahCompassWidgetState createState() => _QiblahCompassWidgetState();
 }
@@ -115,7 +117,7 @@ class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
     super.initState();
   }
 
-  getCity( ) async {
+  getCity() async {
    var currentLocation = await Geolocator.getCurrentPosition();
     try {
       ReverseGeocoding reverseModel = await geocoding.reverseModel(currentLocation.latitude,
@@ -125,7 +127,7 @@ class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
         konum= reverseModel.features[0].placeName;
       });
     } catch (Excepetion) {
-      konum="Konum Bulunamadı";
+      konum="";
       return 'Reverse Geocoding Error';
     }
   }
@@ -133,14 +135,11 @@ class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
     'assets/pusula.svg',
     fit: BoxFit.contain,
     color: Colors.white,
-    height: 400,
     alignment: Alignment.center,
   );
 
   final _needleSvg = SvgPicture.asset(
     'assets/igne.svg',
-    height: 280,
-    width: 40,
     alignment: Alignment.center,
   );
 
@@ -149,6 +148,7 @@ class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
     return Container(
       height: 100,
       width: 100,
+      padding: EdgeInsets.all(20),
       child: StreamBuilder(
         stream: FlutterQiblah.qiblahStream,
         builder: (_, AsyncSnapshot<QiblahDirection> snapshot) {
@@ -156,17 +156,30 @@ class _QiblahCompassWidgetState extends State<QiblahCompassWidget> {
             return LoadingIndicator();
           }
           final qiblahDirection = snapshot.data;
+          double qb = ((qiblahDirection.direction * (pi / 180) * -1).abs()-(qiblahDirection.qiblah * (pi / 180) * -1)).abs();
+          if(qb>=9.4&&qb<=9.5){
+            Vibration.hasCustomVibrationsSupport().then((value) {
+              if(value) {
+                Vibration.vibrate(duration: 500,amplitude: 10);
+              } else {
+                Vibration.vibrate();
+                Future.delayed(Duration(milliseconds: 500)).then((value) => Vibration.vibrate());
+              }
+            });
+          }else{
+            Vibration.cancel();
+          }
           return Stack(
             alignment: Alignment.center,
             children: <Widget>[
               Transform.rotate(
-                angle: (qiblahDirection.direction * (pi / 180) * -1),
+                angle: double.parse((qiblahDirection.direction * (pi / 180) * -1).toStringAsFixed(7)),
                 child: _compassSvg,
               ),
               Transform.rotate(
-                angle: (qiblahDirection.qiblah * (pi / 180) * -1),
+                angle: double.parse((qiblahDirection.qiblah * (pi / 180) * -1).toStringAsFixed(7)),
                 child: Container(
-                    height: 450,
+                    height: 400,
                     alignment: Alignment.topCenter,
                     child: SvgPicture.asset("assets/kabe.svg",width: 35,height: 40,)),
               ),
